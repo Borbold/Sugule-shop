@@ -1,0 +1,25 @@
+<Defaults>
+</Defaults>
+
+<Panel position='-641 -850 -70' height='80' width='365' rotation='180 180 0' visibility='Black'>
+	<TableLayout cellSpacing='1'>
+		<Row>
+			<Cell>
+				<Button text='Создать магазин' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='CreateBag'/>
+			</Cell>
+		</Row>
+	</TableLayout>
+</Panel>
+
+<Panel position='-641 -400 -70' height='800' width='365' rotation='180 180 0' visibility=''>
+	<TableLayout id='tableLayoutShop' cellSpacing='1'>
+		<!--<Row>
+			<Cell>
+				<Button text='Выложить' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='ShowcaseMerchandise'/>
+			</Cell>
+			<Cell>
+				<Button text='Сложить' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='HidecaseMerchandise'/>
+			</Cell>
+		</Row>-->
+	</TableLayout>
+</Panel>
