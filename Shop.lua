@@ -1,202 +1,323 @@
 ﻿function UpdateSave()
   local dataToSave = {
     ["allStoresGUID"] = allStoresGUID,
-    ["newXml"] = self.UI.getXml(), ["lastIdStore"] = lastIdStore
+    ["replacementXml"] = self.UI.getXml(), ["previousStoreId"] = previousStoreId
   }
   local savedData = JSON.encode(dataToSave)
   self.script_state = savedData
 end
 
-local shopName = {
-  tag = "Row",
-  attributes = {
-    preferredHeight = 80,
-    characterValidation = Name
-  },
-  children = {
-    {
-      tag = "Cell",
-      attributes = {
-      },
-      children = {
-        {
-          tag = "InputField",
-          attributes = {
-            resizeTextForBestFit = "True",
-            resizeTextMaxSize = "60"
-          }
-        }
-      },
-    }
+function CreateGlobalVariable()
+  readyScriptUnderBag = [[
+function UpdateSave()
+  local dataToSave = {
+    ["allObjMeta"] = allObjMeta
   }
-}
-
-local shopButton = {
-  tag = "Row",
-  attributes = {
-    preferredHeight = 80
-  },
-  children = {
-    {
-      tag = "Cell",
-      attributes = {
-      },
-      children = {
-        {
-          tag = "Button",
-          attributes = {
-            id = "00",
-            text = "Выложить",
-            resizeTextForBestFit = "True",
-            resizeTextMaxSize = "60",
-            onClick = "ShowcaseMerchandise"
-          }
-        },
-        {
-          tag = "Button",
-          attributes = {
-            text = "Сложить",
-            resizeTextForBestFit = "True",
-            resizeTextMaxSize = "60",
-            onClick = "HidecaseMerchandise"
-          }
-        },
-      },
-    }
-  }
-}
+  local savedData = JSON.encode(dataToSave)
+  self.script_state = savedData
+end
 
 function onLoad(savedData)
+  allObjMeta = {}
+  if(savedData ~= "") then
+    local loadedData = JSON.decode(savedData)
+    allObjMeta = loadedData.allObjMeta or allObjMeta
+  end
+end
+
+function SetObjMetaBag(parametrs)
+  local pos, rot
+  for i = 1, #parametrs.positions do
+    pos = parametrs.positions[i].x.." "..parametrs.positions[i].y.." "..parametrs.positions[i].z
+    rot = parametrs.rotations[i].x.." "..parametrs.rotations[i].y.." "..parametrs.rotations[i].z
+
+    table.insert(allObjMeta, {parametrs.objGUID[i], pos, rot, self.getGUID()})
+    allObjMeta[i][1] = parametrs.objGUID[i]
+  end
+  UpdateSave()
+end
+
+function GetObjectMetaBag()
+  return allObjMeta
+end
+]]
+  readyScriptUnderItem = [[
+function CreateButton()
+  self.createButton({
+    click_function = "SelectItem", function_owner = self,
+    position = {0, 0.1, 0}, height = 500, width = 500,
+    color = {0.75, 0.25, 0.25, 0.6},
+  })
+end
+
+function onLoad()
+  Wait.frames(|| CreateButton(), 10)
+  itemCostDiscount = nil
+  thingsInBasket, countItem, itemCost = {}, 0, -1
+
+  local prev_flag = false
+  for word in string.gmatch(self.getGMNotes(), "%S+") do
+    if(prev_flag) then
+      itemCost = tonumber(word)
+      break
+    end
+    if(word:lower():find("cost:")) then
+      prev_flag = true
+    end
+  end
+  if(itemCost < 0) then
+    print("Предмету не задана стоимость(либо стоимость предмета ниже нуля)")
+    print("После задания стоимости пересоздайте магазин, дабы цена вступила в силу")
+  end
+end
+
+function GiveDiscountItem(parametrs)
+  itemCostDiscount = itemCost + itemCost*parametrs.discount/100
+end
+
+function EndTrade()
+  thingsInBasket, countItem = {}, 0
+  itemCostDiscount = nil
+end
+
+function SetCoinPouchGUID(parametrs)
+  local CoinPouchGUID = parametrs.guid
+  CoinPouch = getObjectFromGUID(CoinPouchGUID)
+end
+
+function SelectItem(obj, playerColor, altClick)
+  if(altClick and countItem > 0) then
+    if(CoinPouch) then
+      CoinPouch.call("UpdateCountMoney", {value = itemCostDiscount or itemCost})
+      broadcastToColor("Вы отказались от товара", playerColor)
+      broadcastToColor("Сейчас у вас: " .. CoinPouch.call("GetAvailableMoney"), playerColor)
+
+      local delItem = thingsInBasket[countItem]
+      destroyObject(delItem)
+      table.remove(thingsInBasket, countItem)
+      countItem = countItem - 1
+    end
+    return
+  end
+        
+  if(CoinPouch) then
+    local availableMoney = CoinPouch.call("GetAvailableMoney")
+    if(CoinPouch and itemCost <= availableMoney) then
+      CoinPouch.call("UpdateCountMoney", {value = -(itemCostDiscount or itemCost)})
+      broadcastToColor("Вы приобрели товар", playerColor)
+      broadcastToColor("У вас осталось: " .. CoinPouch.call("GetAvailableMoney"), playerColor)
+
+      SpawnItemObject()
+    else
+      broadcastToColor("Вам не хватает средств", playerColor)
+    end
+  else
+    print("А чем расплачиваться собрались?")
+  end
+end
+function SpawnItemObject()
+  local selfPosition = CoinPouch.getPosition()
+  local selfRotation = CoinPouch.getRotation()
+  local spawnParametrs = {
+    json = self.getJSON(),
+    position = {x = selfPosition.x - 5, y = selfPosition.y + countItem + 2, z = selfPosition.z},
+    rotation = selfRotation,
+    scale = {x = 1, y = 1, z = 1},
+    sound = false,
+    snap_to_grid = true,
+  }
+  local spawnItem = spawnObjectJSON(spawnParametrs)
+  spawnItem.setLuaScript("")
+  table.insert(thingsInBasket, spawnItem)
+  countItem = countItem + 1
+end
+]]
+
+  shopName = {
+    tag = "Row",
+    attributes = {
+      preferredHeight = 80
+    },
+    children = {
+      {
+        tag = "Cell",
+        attributes = {
+        },
+        children = {
+          {
+            tag = "InputField",
+            attributes = {
+              id = "00",
+              text = "storename",
+              resizeTextForBestFit = "True",
+              resizeTextMaxSize = "60",
+              onEndEdit = "UpdateXMLSave"
+            }
+          }
+        },
+      }
+    }
+  }
+  shopButton = {
+    tag = "Row",
+    attributes = {
+      preferredHeight = 80
+    },
+    children = {
+      {
+        tag = "Cell",
+        attributes = {
+        },
+        children = {
+          {
+            tag = "Button",
+            attributes = {
+              id = "00",
+              text = "↑",
+              resizeTextForBestFit = "True",
+              resizeTextMaxSize = "60",
+              onClick = "ShowcaseMerchandise"
+            }
+          },
+          {
+            tag = "Button",
+            attributes = {
+              text = "↓",
+              resizeTextForBestFit = "True",
+              resizeTextMaxSize = "60",
+              onClick = "HidecaseMerchandise"
+            }
+          },
+          {
+            tag = "Button",
+            attributes = {
+              id = "00",
+              text = "+",
+              resizeTextForBestFit = "True",
+              resizeTextMaxSize = "60",
+              onClick = "TestAddNewList"
+            }
+          },
+        },
+      }
+    }
+  }
+
   allStoresGUID = {}
-  lastIdStore = 1
   showGUIDBag = ""
+
+  allObjectsItemGUID = {}
+  watchword = {"sell item", "coin pouch"}
+  CoinPouchGUID = ""
+  -- Не отнимаемое значение.
+  --Нужно чтобы грамотно отлавливать новые магазины после удаления какого либо из середины списка
+  previousStoreId = 1
+end
+
+function onLoad(savedData)
+  CreateGlobalVariable()
   if(savedData ~= "") then
     local loadedData = JSON.decode(savedData)
     allStoresGUID = loadedData.allStoresGUID or allStoresGUID
-    if(loadedData.newXml and #loadedData.newXml > 0) then
-      self.UI.setXml(loadedData.newXml)
+    previousStoreId = loadedData.previousStoreId or previousStoreId
+    if(loadedData.replacementXml and #loadedData.replacementXml > 0) then
+      self.UI.setXml(loadedData.replacementXml)
     end
   end
-  allObjectsGUID = {}
-  watchword = {"sell item", "coin pouch"}
-  CoinPouchGUID = ""
+  Wait.frames(|| WasteRemoval(), 5)
 end
 
-function Test()
-  local desiredTable = false
-  local xmlTable = {}
-  xmlTable = self.UI.getXmlTable()
-  for _,xml in pairs(xmlTable) do
-	  for _,parent in pairs(xml) do
-      if(type(parent) == "table") then
-        for _,children in pairs(parent) do
-          if(type(children) == "table") then
-            for title,attribute in pairs(children) do
-	            if(attribute["id"] and attribute["id"]:find("tableLayoutShop")) then
-                desiredTable = true
-              end
-              if(desiredTable and title == "children") then
-                table.insert(attribute, shopName)
-                shopButton.children[1].children[1].attributes.id = lastIdStore
-                lastIdStore = lastIdStore + 1
-                table.insert(attribute, shopButton)
-                self.UI.setXmlTable(xmlTable)
-                desiredTable = false
-              end
-            end
-          end
-        end
-      end
+function WasteRemoval()
+  for index, guid in pairs(allStoresGUID) do
+    if(not getObjectFromGUID(guid)) then
+      allStoresGUID[tostring(index)] = nil
     end
   end
+  UpdateSave()
 end
-
-function TestDelete(index)
-  local desiredTable = false
-  local xmlTable = {}
-  xmlTable = self.UI.getXmlTable()
-  for _,xml in pairs(xmlTable) do
-	  for _,parent in pairs(xml) do
-      if(type(parent) == "table") then
-        for _,children in pairs(parent) do
-          if(type(children) == "table") then
-            for title,attribute in pairs(children) do
-	            if(attribute["id"] and attribute["id"]:find("tableLayoutShop")) then
-                desiredTable = true
-              end
-              if(desiredTable and title == "children") then
-                table.remove(attribute, index)
-                table.remove(attribute, index)
-                self.UI.setXmlTable(xmlTable)
-                desiredTable = false
-              end
-            end
-          end
-        end
-      end
-    end
-  end
+-- Хз как реализовать
+function TestAddNewList(_, _, idStoreGUID)
+  print("Пока в разработке")
 end
 
 function onCollisionEnter(info)
-  if(allObjectsGUID) then
-    if(info.collision_object.getGMNotes():lower():find(watchword[1])) then
-      for _, v in ipairs(allObjectsGUID) do
-        if(v == info.collision_object.getGUID()) then
-          return
-        end
+  if(info.collision_object.getGMNotes():lower():find(watchword[1])) then
+    for _, v in ipairs(allObjectsItemGUID) do
+      if(v == info.collision_object.getGUID()) then
+        return
       end
-      table.insert(allObjectsGUID, info.collision_object.getGUID())
-    elseif(info.collision_object.getGMNotes():lower():find(watchword[2])) then
-      Wait.frames(|| SetNumberCoinsObjects(info), 5)
     end
+    table.insert(allObjectsItemGUID, info.collision_object.getGUID())
+  elseif(info.collision_object.getGMNotes():lower():find(watchword[2])) then
+    Wait.frames(|| SetNumberCoinsObjects(info), 5)
   end
 end
-
-function SetNumberCoinsObjects(info)
-  CoinPouchGUID = info.collision_object.getGUID()
-  for _, guid in ipairs(allObjectsGUID) do
-    local obj = getObjectFromGUID(guid)
-    Wait.frames(|| SetCoinPouchGUIDIn(obj), 30)
-  end
-end
-
 function onCollisionExit(info)
-  if(allObjectsGUID) then
+  if(allObjectsItemGUID) then
     if(info.collision_object.getGMNotes():lower():find(watchword[1])) then
       local removeId = -1
-      for i, v in ipairs(allObjectsGUID) do
+      for i, v in ipairs(allObjectsItemGUID) do
         if(v == info.collision_object.getGUID()) then
           removeId = i
         end
       end
       if(removeId > 0) then
-        table.remove(allObjectsGUID, removeId)
+        table.remove(allObjectsItemGUID, removeId)
       end
     elseif(info.collision_object.getGMNotes():lower():find(watchword[2])) then
-      CoinPouchGUID = ""
+      Wait.frames(|| SetNumberCoinsObjects(), 5)
     end
   end
+end
+function SetNumberCoinsObjects(info)
+  CoinPouchGUID = (info and info.collision_object.getGUID()) or ""
+  for _, guid in ipairs(allObjectsItemGUID) do
+    Wait.frames(|| SetCoinPouchGUIDIn(guid), 30)
+  end
+end
+function SetCoinPouchGUIDIn(guidItem)
+  getObjectFromGUID(guidItem).call("SetCoinPouchGUID", {guid = CoinPouchGUID})
 end
 
 function onObjectDestroy(info)
-  for i, v in ipairs(allObjectsGUID) do
-    if(v == info.getGUID()) then
-      table.remove(allObjectsGUID, i)
+  DeleteItem(info.getGUID())
+  DeleteBag(info.getGUID())
+end
+function DeleteItem(guid)
+  for i, v in ipairs(allObjectsItemGUID) do
+    if(v == guid) then
+      table.remove(allObjectsItemGUID, i)
     end
   end
-  DeleteBag(info.getGUID())
+end
+function DeleteBag(guid)
+  -- lua не умеет выдергивать длину массива если он не проходит через ipairs
+  local indexStoreId = 1
+  for _, g in pairs(allStoresGUID) do
+    if(g == guid) then
+      XMLReplacementDelete((indexStoreId - 1)*2 + 1)
+      Wait.frames(|| WasteRemoval(), 5)
+      Wait.frames(|| UpdateSave(), 7)
+      return
+    end
+    indexStoreId = indexStoreId + 1
+  end
 end
 
 function CreateBag()
-  if(#allObjectsGUID > 0) then
+  if(#allObjectsItemGUID > 0) then
     Wait.frames(|| CreateScriptInItem(), 30)
     Wait.frames(|| PutObjectsInBag(), 60)
   end
 end
-
+function CreateScriptInItem()
+  print("Adding scripts from item")
+  for _, guid in ipairs(allObjectsItemGUID) do
+    getObjectFromGUID(guid).setLuaScript(readyScriptUnderItem)
+  end
+  UpdateSave()
+end
 function PutObjectsInBag()
-  print("Scripts items added")
   local selfPosition = self.getPosition()
   local spawnParametrs = {
     type = "Bag",
@@ -209,7 +330,7 @@ function PutObjectsInBag()
   local locBoardObjectsPos, locBoardObjectsRot, locObjGUID = {}, {}, {}
   local spawnBag = spawnObject(spawnParametrs)
   Wait.frames(|| CreateScriptInBag(spawnBag), 2)
-  for _, v in ipairs(allObjectsGUID) do
+  for _, v in ipairs(allObjectsItemGUID) do
     local locObj = getObjectFromGUID(v)
 
     spawnBag.putObject(locObj)
@@ -218,25 +339,15 @@ function PutObjectsInBag()
     table.insert(locBoardObjectsRot, locObj.getRotation())
     Wait.frames(|| table.insert(locObjGUID, locObj.getGUID()), 3)
   end
-  Wait.frames(|| table.insert(allStoresGUID, spawnBag.getGUID()), 4)
+  Wait.frames(function() allStoresGUID[tostring(previousStoreId)] = spawnBag.getGUID() end, 4)
   Wait.frames(|| SetObjMeta(spawnBag, locObjGUID, locBoardObjectsPos, locBoardObjectsRot), 5)
-  Wait.frames(|| Test(), 6)
+  Wait.frames(|| XMLReplacementAdd(), 6)
   Wait.frames(|| UpdateSave(), 7)
 end
-
-function DeleteBag(guid)
-  for index,v in ipairs(allStoresGUID) do
-    if(v == guid) then
-      ButtonDelete(index)
-    end
-  end
-  Wait.frames(|| UpdateSave(), 7)
+function CreateScriptInBag(bag)
+  print("Adding scripts from bag")
+  bag.setLuaScript(readyScriptUnderBag)
 end
-
-function ButtonDelete(index)
-  TestDelete(index)
-end
-
 function SetObjMeta(bag, objGUID, locBoardObjectsPos, locBoardObjectsRot)
   local parametrs = {rotations = locBoardObjectsRot, positions = locBoardObjectsPos, objGUID = objGUID}
   bag.call("SetObjMetaBag", parametrs)
@@ -244,198 +355,183 @@ function SetObjMeta(bag, objGUID, locBoardObjectsPos, locBoardObjectsRot)
 end
 
 function ShowcaseMerchandise(player, _, idStoreGUID)
-  idStoreGUID = tonumber(idStoreGUID)
   local storeGUID = allStoresGUID[idStoreGUID]
-  if(getObjectFromGUID(storeGUID)) then
-    GetObjectsBag(storeGUID)
+  local store = getObjectFromGUID(storeGUID)
+  if(store) then
+    showGUIDBag = storeGUID
+    GetObjectsBag(storeGUID, store)
   else
-    table.remove(allStoresGUID, idStoreGUID)
+    print("Этот магазин был удален")
+    local indexStoreId = 1
+    for _, g in pairs(allStoresGUID) do
+      if(g == guid) then
+        XMLReplacementDelete((indexStoreId - 1)*2 + 1)
+        Wait.frames(|| UpdateSave(), 5)
+        break
+      end
+      indexStoreId = indexStoreId + 1
+    end
   end
   UpdateSave()
 end
-
-function GetObjectsBag(storeGUID)
-  local store = getObjectFromGUID(storeGUID)
-  showGUIDBag = storeGUID
+function GetObjectsBag(storeGUID, store)
   local allObjMeta = store.call("GetObjectMetaBag")
-  for _,v in ipairs(allObjMeta) do
-    if(v[4] == storeGUID) then
-      local objGUID = v[1]
+  if(not next(allObjectsItemGUID)) then
+    for _,v in ipairs(allObjMeta) do
+      if(v[4] == storeGUID) then
+        local objGUID = v[1]
 
-      local locText, count = v[2], 1
-      local objPos = {}
-      for digital in locText:gmatch("%S+") do
-        table.insert(objPos, digital + self.getPosition()[count])
-        count = count + 1
-      end
-      objPos[2] = self.getPosition().y + 0.5
+        local locText, count = v[2], 1
+        local objPos = {}
+        for digital in locText:gmatch("%S+") do
+          table.insert(objPos, digital + self.getPosition()[count])
+          count = count + 1
+        end
+        objPos[2] = self.getPosition().y + 0.5
       
-      locText, count = v[3], 1
-      local objRot = {}
-      for digital in locText:gmatch("%S+") do
-        table.insert(objRot, digital)
-        count = count + 1
-      end
+        locText, count = v[3], 1
+        local objRot = {}
+        for digital in locText:gmatch("%S+") do
+          table.insert(objRot, digital)
+          count = count + 1
+        end
 
-      local takeParametrs = {
-        smooth = false,
-        guid = objGUID,
-        position = {x = objPos[1], y = objPos[2], z = objPos[3]},
-        rotation = {x = objRot[1], y = objRot[2], z = objRot[3]}
-      }
-      local storItem = store.takeObject(takeParametrs)
-      -- Пока хз, добавить это или нет
-      --storItem.locked = true
-      --print(storItem.locked)
+        local takeParametrs = {
+          smooth = false,
+          guid = objGUID,
+          position = {x = objPos[1], y = objPos[2], z = objPos[3]},
+          rotation = {x = objRot[1], y = objRot[2], z = 0}
+        }
+        local storItem = store.takeObject(takeParametrs)
+        -- Пока хз, добавить это или нет
+        --storItem.locked = true
+        --print(storItem.locked)
+      end
     end
   end
 end
 
 function HidecaseMerchandise()
   local store = getObjectFromGUID(showGUIDBag)
-  local allObjMeta = store.call("GetObjectMetaBag")
-  for _, objGUID in ipairs(allObjectsGUID) do
-    for _, objMeta in ipairs(allObjMeta) do
-      if(store and objGUID == objMeta[1] and showGUIDBag == objMeta[4]) then
-        store.putObject(getObjectFromGUID(objMeta[1]))
+  if(store) then
+    local allObjMeta = store.call("GetObjectMetaBag")
+    for _, objGUID in ipairs(allObjectsItemGUID) do
+      for _, objMeta in ipairs(allObjMeta) do
+        if(store and objGUID == objMeta[1] and showGUIDBag == objMeta[4]) then
+          getObjectFromGUID(objGUID).call("EndTrade")
+          store.putObject(getObjectFromGUID(objMeta[1]))
+        end
       end
+    end
+  end
+  self.UI.setAttribute("discountField", "text", "")
+end
+
+function UpdateXMLSave(_, input, id)
+  id = tostring(id)
+  local currentXml = self.UI.getXml()
+  if(currentXml:find("storename" .. id)) then
+    local firstIndex = currentXml:find("storename" .. id) - 1
+    local locXml = currentXml:sub(0, firstIndex)
+    locXml = locXml .. input
+    local lastIndex = firstIndex + #("storename" .. id) + 1
+    locXml = locXml .. currentXml:sub(lastIndex)
+    self.UI.setXml(locXml)
+	  Wait.frames(|| UpdateSave(), 5)
+  end
+end
+
+function GiveDiscount(_, input)
+  for _,guid in pairs(allObjectsItemGUID) do
+    local item = getObjectFromGUID(guid)
+    if(item) then
+      item.call("GiveDiscountItem", {discount = input})
+    else
+      print("Какие то проблемы с выдачей скидки")
     end
   end
 end
 
-function BuyItem()
-  local CoinPouch = getObjectFromGUID(CoinPouchGUID)
-  if(CoinPouch) then
-    print(CoinPouch.call("GetAvailableMoney"))
+function XMLReplacementAdd()
+  local xmlTable, desiredTable = {}, false
+  xmlTable = self.UI.getXmlTable()
+  for _,xml in pairs(xmlTable) do
+	  for _,parent in pairs(xml) do
+      if(type(parent) == "table") then
+        for _,children in pairs(parent) do
+          if(type(children) == "table") then
+            for _,child in pairs(children) do
+              if(type(child) == "table") then
+                for _,ch in pairs(child) do
+                  if(type(ch) == "table") then
+                    for title,attribute in pairs(ch) do
+                      -- Сложно не понятная фигня. Уже и забыл как работает
+                      if(attribute["id"] and attribute["id"]:find("tableLayoutShop")) then
+                        desiredTable = true
+                      end
+                      if(desiredTable and title == "children") then
+                        local shopNameText = shopName.children[1].children[1].attributes.text
+                        if(shopNameText == "storename") then shopName.children[1].children[1].attributes.text = shopNameText .. previousStoreId end
+                        shopName.children[1].children[1].attributes.id = previousStoreId
+                        table.insert(attribute, shopName)
+
+                        shopButton.children[1].children[1].attributes.id = previousStoreId
+                        shopButton.children[1].children[3].attributes.id = previousStoreId
+                        table.insert(attribute, shopButton)
+                        self.UI.setXmlTable(xmlTable)
+                        desiredTable = false
+
+                        -- Вернем балванке стандартный текст
+                        Wait.frames(function() shopName.children[1].children[1].attributes.text = "storename" end, 5)
+                        Wait.frames(|| UpdateSave(), 5)
+                        previousStoreId = previousStoreId + 1
+                        return
+                      end
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
   end
 end
+function XMLReplacementDelete(storeId)
+  local xmlTable, desiredTable = {}, false
+  xmlTable = self.UI.getXmlTable()
+  for _,xml in pairs(xmlTable) do
+	  for _,parent in pairs(xml) do
+      if(type(parent) == "table") then
+        for _,children in pairs(parent) do
+          if(type(children) == "table") then
+            for _,child in pairs(children) do
+              if(type(child) == "table") then
+                for _,ch in pairs(child) do
+                  if(type(ch) == "table") then
+                    for title,attribute in pairs(ch) do
+                      -- Сложно не понятная фигня. Уже и забыл как работает
+                      if(attribute["id"] and attribute["id"]:find("tableLayoutShop")) then
+                        desiredTable = true
+                      end
+                      if(desiredTable and title == "children") then
+                        table.remove(attribute, storeId)
+                        table.remove(attribute, storeId)
+                        self.UI.setXmlTable(xmlTable)
+                        desiredTable = false
 
-function SetCoinPouchGUIDIn(obj)
-  obj.call("SetCoinPouchGUID", {guid = CoinPouchGUID})
-end
-
-function CreateScriptInBag(bag)
-  print("Adding scripts from bag")
-  local newScript = [[
-    function UpdateSave()
-      local dataToSave = {
-        ["allObjMeta"] = allObjMeta
-      }
-      local savedData = JSON.encode(dataToSave)
-      self.script_state = savedData
-    end
-
-    function onLoad(savedData)
-      allObjMeta = {}
-      if(savedData ~= "") then
-        local loadedData = JSON.decode(savedData)
-       allObjMeta = loadedData.allObjMeta or allObjMeta
-      end
-    end
-
-    function SetObjMetaBag(parametrs)
-      local pos, rot
-      for i = 1, #parametrs.positions do
-        pos = parametrs.positions[i].x.." "..parametrs.positions[i].y.." "..parametrs.positions[i].z
-        rot = parametrs.rotations[i].x.." "..parametrs.rotations[i].y.." "..parametrs.rotations[i].z
-
-        table.insert(allObjMeta, {parametrs.objGUID[i], pos, rot, self.getGUID()})
-        allObjMeta[i][1] = parametrs.objGUID[i]
-      end
-    end
-    function GetObjectMetaBag()
-      return allObjMeta
-    end
-  ]]
-  bag.setLuaScript(newScript)
-end
-
-function CreateScriptInItem()
-  print("Adding scripts from item")
-  for _, guid in ipairs(allObjectsGUID) do
-    obj = getObjectFromGUID(guid)
-
-    local newScript = [[
-      function onLoad()
-        Wait.frames(|| CreateButton(), 10)
-        local prev_flag = false
-        itemCost = -1
-        thingsInBasket, countItem = {}, 0
-        for word in string.gmatch(self.getGMNotes(), "%S+") do
-          if(prev_flag) then
-            itemCost = tonumber(word)
-            break
-          end
-          if(word:lower():find("cost:")) then
-            prev_flag = true
+                        Wait.frames(|| UpdateSave(), 5)
+                        return
+                      end
+                    end
+                  end
+                end
+              end
+            end
           end
         end
-        if(itemCost < 0) then
-          print("Предмету не задана стоимость. (либо стоимость предмета ниже нуля)")
-        end
       end
-
-      function CreateButton()
-        self.createButton({
-          click_function = "SelectItem", function_owner = self,
-          position = {0, 0.1, 0}, height = 500, width = 500,
-          color = {0.75, 0.25, 0.25, 0.6},
-        })
-      end
-
-      function SetCoinPouchGUID(parametrs)
-        local CoinPouchGUID = parametrs.guid
-        CoinPouch = getObjectFromGUID(CoinPouchGUID)
-      end
-
-      function SelectItem(obj, playerColor, altClick)
-        if(altClick and countItem > 0) then
-          if(CoinPouch) then
-            CoinPouch.call("UpdateCountMoney", {value = -itemCost})
-            broadcastToColor("Вы отказались от товара", playerColor)
-            broadcastToColor("Сейчас у вас: " .. CoinPouch.call("GetAvailableMoney"), playerColor)
-
-            local delItem = thingsInBasket[countItem]
-            destroyObject(delItem)
-            table.remove(thingsInBasket, countItem)
-            countItem = countItem - 1
-          end
-          return
-        end
-        
-        if(CoinPouch) then
-          local availableMoney = CoinPouch.call("GetAvailableMoney")
-          if(CoinPouch and itemCost <= availableMoney) then
-            CoinPouch.call("UpdateCountMoney", {value = itemCost})
-            broadcastToColor("Вы приобрели товар", playerColor)
-            broadcastToColor("У вас осталось: " .. CoinPouch.call("GetAvailableMoney"), playerColor)
-
-            SpawnItemObject()
-          else
-            broadcastToColor("Вам не хватает средств", playerColor)
-          end
-        else
-          print("А чем расплачиваться собрались?")
-        end
-      end
-
-      function SpawnItemObject()
-        local selfPosition = self.getPosition()
-        local spawnParametrs = {
-          json = self.getJSON(),
-          position = {x = selfPosition.x + 15.5, y = selfPosition.y + countItem + 2, z = selfPosition.z - 5.5},
-          rotation = {x = 0, y = 0, z = 0},
-          scale = {x = 1, y = 1, z = 1},
-          sound = false,
-          snap_to_grid = true,
-        }
-        local spawnItem = spawnObjectJSON(spawnParametrs)
-        spawnItem.setLuaScript("")
-        table.insert(thingsInBasket, spawnItem)
-        countItem = countItem + 1
-      end
-    ]]
-    obj.setLuaScript(newScript)
+    end
   end
-  UpdateSave()
 end

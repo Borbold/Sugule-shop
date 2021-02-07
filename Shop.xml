@@ -1,7 +1,7 @@
 <Defaults>
 </Defaults>
 
-<Panel position='-641 -850 -70' height='80' width='365' rotation='180 180 0' visibility='Black'>
+<Panel position='641 850 -65' height='80' width='365' rotation='0 0 0' visibility='Black'>
 	<TableLayout cellSpacing='1'>
 		<Row>
 			<Cell>
@@ -11,15 +11,26 @@
 	</TableLayout>
 </Panel>
 
-<Panel position='-641 -400 -70' height='800' width='365' rotation='180 180 0' visibility=''>
-	<TableLayout id='tableLayoutShop' cellSpacing='1'>
-		<!--<Row>
-			<Cell>
-				<Button text='Выложить' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='ShowcaseMerchandise'/>
-			</Cell>
-			<Cell>
-				<Button text='Сложить' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='HidecaseMerchandise'/>
-			</Cell>
-		</Row>-->
-	</TableLayout>
+<Panel position='641 80 -65' visibility=''>
+	<VerticalScrollView height='1180' width='385' verticalScrollbarVisibility='AutoHideAndExpandViewport'
+		color='black' offsetXY='0 155'>
+		<TableLayout id='tableLayoutShop' height='2500' cellSpacing='5'>
+			<!--<Row>
+				<Cell>
+					<Button text='Выложить' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='ShowcaseMerchandise'/>
+				</Cell>
+				<Cell>
+					<Button text='Сложить' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='HidecaseMerchandise'/>
+				</Cell>
+				<Cell>
+					<Button text='+' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick=''/>
+				</Cell>
+			</Row>-->
+		</TableLayout>
+	</VerticalScrollView>
+</Panel>
+
+<Panel position='0 850 -65' active='true' visibility='Black'>
+	<InputField id='discountField' resizeTextForBestFit='true' resizeTextMaxSize='60' height='60'
+		onEndEdit='GiveDiscount' characterValidation='Integer' placeholder='discount'/>
 </Panel>
