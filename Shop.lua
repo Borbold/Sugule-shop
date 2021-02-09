@@ -228,11 +228,14 @@ function onLoad(savedData)
 end
 
 function WasteRemoval()
+  local countBags = 0
   for index, guid in pairs(allStoresGUID) do
+    countBags = 1
     if(not getObjectFromGUID(guid)) then
       allStoresGUID[tostring(index)] = nil
     end
   end
+  if(countBags == 0) then previousStoreId = 1 end
   UpdateSave()
 end
 -- Хз как реализовать
@@ -452,6 +455,14 @@ function GiveDiscount(_, input)
   end
 end
 
+function EnlargeHeightPanelStat(countStatisticIndex)
+  if(countStatisticIndex > 4 * 2) then
+    --preferredHeight=160 cellSpacing=5
+    local newHeightPanel = countStatisticIndex * 160 + countStatisticIndex * 5
+    Wait.Frames(|| self.UI.setAttribute("tableLayoutShop", "height", newHeightPanel), 5)
+  end
+end
+
 function XMLReplacementAdd()
   local xmlTable, desiredTable = {}, false
   xmlTable = self.UI.getXmlTable()
@@ -483,7 +494,8 @@ function XMLReplacementAdd()
 
                         -- Вернем балванке стандартный текст
                         Wait.frames(function() shopName.children[1].children[1].attributes.text = "storename" end, 5)
-                        Wait.frames(|| UpdateSave(), 5)
+                        Wait.frames(|| EnlargeHeightPanelStat(previousStoreId), 5)
+                        Wait.frames(|| UpdateSave(), 7)
                         previousStoreId = previousStoreId + 1
                         return
                       end
