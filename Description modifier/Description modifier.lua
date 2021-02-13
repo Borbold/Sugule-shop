@@ -15,12 +15,11 @@ function onCollisionEnter(info)
 
     for word in string.gmatch(info.getDescription(), "%S+") do
       if(prev_flag) then
-        print(word)
         table.insert(itemCost, tonumber(word))
         table.insert(changeObj, info)
         break
       end
-      if(word:lower():find(watchword[1]) or word:lower():find(watchword[2])) then
+      if(word:lower() == watchword[1] or word:lower() == watchword[2]) then
         prev_flag = true
       end
     end
@@ -31,14 +30,12 @@ function ApplyChanges()
   if(itemCost and changeObj) then
     for index, item in ipairs(changeObj) do
       local prevGMNotes = item.getGMNotes()
-      if(not prevGMNotes:find("cost:")) then
+      if(not prevGMNotes:find("sell item")) then
         local newGMNotes = "sell item" .. " \n"
-        if(not itemCost[index]) then broadcastToAll(item.getName() .. " не задана стоимость! Перепроверте.") return end
-        newGMNotes = newGMNotes .. "cost: " .. itemCost[index] .. " \n"
         newGMNotes = newGMNotes .. prevGMNotes
         Wait.frames(function() item.setGMNotes(newGMNotes) end, 5)
       else
-        broadcastToAll(item.getName() .. " уже задана стоимость!")
+        broadcastToAll(item.getName() .. " уже задан!")
       end
     end
     itemCost, changeObj = {}, {}

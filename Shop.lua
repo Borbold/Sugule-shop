@@ -56,12 +56,12 @@ function onLoad()
   thingsInBasket, countItem, itemCost = {}, 0, -1
 
   local prev_flag = false
-  for word in string.gmatch(self.getGMNotes(), "%S+") do
+  for word in string.gmatch(self.getDescription(), "%S+") do
     if(prev_flag) then
       itemCost = tonumber(word)
       break
     end
-    if(word:lower():find("cost:")) then
+    if(word:lower() == "cost:" or word:lower() == "цена:") then
       prev_flag = true
     end
   end
