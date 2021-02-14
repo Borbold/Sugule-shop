@@ -58,6 +58,7 @@ function onLoad()
   local prev_flag = false
   for word in string.gmatch(self.getDescription(), "%S+") do
     if(prev_flag) then
+      word = word:gsub(",", ".")
       itemCost = tonumber(word)
       break
     end
@@ -445,6 +446,15 @@ function UpdateXMLSave(_, input, id)
 end
 
 function GiveDiscount(_, input)
+  if(input and input == "") then return end
+
+  local numInput = math.abs(tonumber(input))
+  if(numInput > 0) then
+    broadcastToColor("The cost of the items has been increased by "..numInput.."%", "Black")
+  else
+    broadcastToColor("The cost of the items has been decreased by "..numInput.."%", "Black")
+  end
+
   for _,guid in pairs(allObjectsItemGUID) do
     local item = getObjectFromGUID(guid)
     if(item) then

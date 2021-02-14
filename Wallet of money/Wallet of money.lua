@@ -61,6 +61,7 @@ end
 
 function SetInputMoney(player, input)
   if(input ~= "") then
+    input = input:gsub(",", ".")
     local locMoney = availableMoney + tonumber(input)
     if(locMoney < 0) then
       local locCurrentColor = (Player[currentColor].steam_name and currentColor) or "Black"
