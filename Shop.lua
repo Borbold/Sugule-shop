@@ -448,11 +448,11 @@ end
 function GiveDiscount(_, input)
   if(input and input == "") then return end
 
-  local numInput = math.abs(tonumber(input))
+  local numInput = tonumber(input)
   if(numInput > 0) then
     broadcastToColor("The cost of the items has been increased by "..numInput.."%", "Black")
   else
-    broadcastToColor("The cost of the items has been decreased by "..numInput.."%", "Black")
+    broadcastToColor("The cost of the items has been decreased by "..math.abs(numInput).."%", "Black")
   end
 
   for _,guid in pairs(allObjectsItemGUID) do
