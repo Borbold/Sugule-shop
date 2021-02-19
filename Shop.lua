@@ -51,7 +51,7 @@ function CreateButton()
 end
 
 function onLoad()
-  Wait.frames(|| CreateButton(), 10)
+  Wait.time(|| CreateButton(), 0.4)
   itemCostDiscount = nil
   thingsInBasket, countItem, itemCost = {}, 0, -1
 
@@ -225,7 +225,7 @@ function onLoad(savedData)
       self.UI.setXml(loadedData.replacementXml)
     end
   end
-  Wait.frames(|| WasteRemoval(), 5)
+  Wait.time(|| WasteRemoval(), 0.2)
 end
 
 function WasteRemoval()
@@ -253,7 +253,7 @@ function onCollisionEnter(info)
     end
     table.insert(allObjectsItemGUID, info.collision_object.getGUID())
   elseif(info.collision_object.getGMNotes():lower():find(watchword[2])) then
-    Wait.frames(|| SetNumberCoinsObjects(info), 5)
+    Wait.time(|| SetNumberCoinsObjects(info), 0.2)
   end
 end
 function onCollisionExit(info)
@@ -269,14 +269,14 @@ function onCollisionExit(info)
         table.remove(allObjectsItemGUID, removeId)
       end
     elseif(info.collision_object.getGMNotes():lower():find(watchword[2])) then
-      Wait.frames(|| SetNumberCoinsObjects(), 5)
+      Wait.time(|| SetNumberCoinsObjects(), 0.2)
     end
   end
 end
 function SetNumberCoinsObjects(info)
   CoinPouchGUID = (info and info.collision_object.getGUID()) or ""
   for _, guid in ipairs(allObjectsItemGUID) do
-    Wait.frames(|| SetCoinPouchGUIDIn(guid), 30)
+    Wait.time(|| SetCoinPouchGUIDIn(guid), 0.5)
   end
 end
 function SetCoinPouchGUIDIn(guidItem)
@@ -300,8 +300,8 @@ function DeleteBag(guid)
   for _, g in pairs(allStoresGUID) do
     if(g == guid) then
       XMLReplacementDelete((indexStoreId - 1)*2 + 1)
-      Wait.frames(|| WasteRemoval(), 5)
-      Wait.frames(|| UpdateSave(), 7)
+      Wait.time(|| WasteRemoval(), 0.2)
+      Wait.time(|| UpdateSave(), 0.3)
       return
     end
     indexStoreId = indexStoreId + 1
@@ -310,8 +310,8 @@ end
 
 function CreateBag()
   if(#allObjectsItemGUID > 0) then
-    Wait.frames(|| CreateScriptInItem(), 30)
-    Wait.frames(|| PutObjectsInBag(), 60)
+    Wait.time(|| CreateScriptInItem(), 0.5)
+    Wait.time(|| PutObjectsInBag(), 0.8)
   end
 end
 function CreateScriptInItem()
@@ -333,7 +333,7 @@ function PutObjectsInBag()
   }
   local locBoardObjectsPos, locBoardObjectsRot, locObjGUID = {}, {}, {}
   local spawnBag = spawnObject(spawnParametrs)
-  Wait.frames(|| CreateScriptInBag(spawnBag), 2)
+  Wait.time(|| CreateScriptInBag(spawnBag), 0.1)
   for _, v in ipairs(allObjectsItemGUID) do
     local locObj = getObjectFromGUID(v)
 
@@ -341,12 +341,12 @@ function PutObjectsInBag()
 
     table.insert(locBoardObjectsPos, locObj.getPosition() - self.getPosition())
     table.insert(locBoardObjectsRot, locObj.getRotation())
-    Wait.frames(|| table.insert(locObjGUID, locObj.getGUID()), 3)
+    Wait.time(|| table.insert(locObjGUID, locObj.getGUID()), 0.2)
   end
-  Wait.frames(function() allStoresGUID[tostring(previousStoreId)] = spawnBag.getGUID() end, 4)
-  Wait.frames(|| SetObjMeta(spawnBag, locObjGUID, locBoardObjectsPos, locBoardObjectsRot), 5)
-  Wait.frames(|| XMLReplacementAdd(), 6)
-  Wait.frames(|| UpdateSave(), 7)
+  Wait.time(function() allStoresGUID[tostring(previousStoreId)] = spawnBag.getGUID() end, 0.3)
+  Wait.time(|| SetObjMeta(spawnBag, locObjGUID, locBoardObjectsPos, locBoardObjectsRot), 0.4)
+  Wait.time(|| XMLReplacementAdd(), 0.5)
+  Wait.time(|| UpdateSave(), 0.6)
 end
 function CreateScriptInBag(bag)
   print("Adding scripts from bag")
@@ -370,7 +370,7 @@ function ShowcaseMerchandise(player, _, idStoreGUID)
     for _, g in pairs(allStoresGUID) do
       if(g == guid) then
         XMLReplacementDelete((indexStoreId - 1)*2 + 1)
-        Wait.frames(|| UpdateSave(), 5)
+        Wait.time(|| UpdateSave(), 0.2)
         break
       end
       indexStoreId = indexStoreId + 1
@@ -441,7 +441,7 @@ function UpdateXMLSave(_, input, id)
     local lastIndex = firstIndex + #("storename" .. id) + 1
     locXml = locXml .. currentXml:sub(lastIndex)
     self.UI.setXml(locXml)
-	  Wait.frames(|| UpdateSave(), 5)
+	  Wait.time(|| UpdateSave(), 0.2)
   end
 end
 
@@ -469,7 +469,7 @@ function EnlargeHeightPanelStat(countStatisticIndex)
   if(countStatisticIndex > 4 * 2) then
     --preferredHeight=160 cellSpacing=5
     local newHeightPanel = countStatisticIndex * 160 + countStatisticIndex * 5
-    Wait.Frames(|| self.UI.setAttribute("tableLayoutShop", "height", newHeightPanel), 5)
+    Wait.time(|| self.UI.setAttribute("tableLayoutShop", "height", newHeightPanel), 0.2)
   end
 end
 
@@ -503,9 +503,9 @@ function XMLReplacementAdd()
                         desiredTable = false
 
                         -- Вернем балванке стандартный текст
-                        Wait.frames(function() shopName.children[1].children[1].attributes.text = "storename" end, 5)
-                        Wait.frames(|| EnlargeHeightPanelStat(previousStoreId), 5)
-                        Wait.frames(|| UpdateSave(), 7)
+                        Wait.time(function() shopName.children[1].children[1].attributes.text = "storename" end, 0.2)
+                        Wait.time(|| EnlargeHeightPanelStat(previousStoreId), 0.2)
+                        Wait.time(|| UpdateSave(), 0.3)
                         previousStoreId = previousStoreId + 1
                         return
                       end
@@ -543,7 +543,7 @@ function XMLReplacementDelete(storeId)
                         self.UI.setXmlTable(xmlTable)
                         desiredTable = false
 
-                        Wait.frames(|| UpdateSave(), 5)
+                        Wait.time(|| UpdateSave(), 0.2)
                         return
                       end
                     end

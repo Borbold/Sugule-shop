@@ -27,8 +27,8 @@ function onLoad(savedData)
   end
 
   currentColor = DenoteSth()
-  Wait.frames(function() originalXml = self.UI.getXml() end, 5)
-  Wait.frames(|| ChangeVisibility(), 10)
+  Wait.time(function() originalXml = self.UI.getXml() end, 0.2)
+  Wait.time(|| ChangeVisibility(), 0.3)
 end
 
 function onFixedUpdate()

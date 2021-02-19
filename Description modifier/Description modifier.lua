@@ -33,7 +33,7 @@ function ApplyChanges()
       if(not prevGMNotes:find("sell item")) then
         local newGMNotes = "sell item" .. " \n"
         newGMNotes = newGMNotes .. prevGMNotes
-        Wait.frames(function() item.setGMNotes(newGMNotes) end, 5)
+        Wait.time(function() item.setGMNotes(newGMNotes) end, 0.2)
       else
         broadcastToAll(item.getName() .. " уже задан!")
       end
