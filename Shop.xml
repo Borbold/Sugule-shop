@@ -11,8 +11,8 @@
 	</TableLayout>
 </Panel>
 
-<Panel position='641 80 -65' visibility=''>
-	<VerticalScrollView height='1180' width='385' verticalScrollbarVisibility='AutoHideAndExpandViewport'
+<Panel position='650 80 -63' visibility=''>
+	<VerticalScrollView height='1180' width='400' verticalScrollbarVisibility='AutoHideAndExpandViewport'
 		color='black' offsetXY='0 155'>
 		<TableLayout id='tableLayoutShop' height='2500' cellSpacing='5'>
 			<!--<Row>

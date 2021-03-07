@@ -70,6 +70,7 @@ function SetInputMoney(player, input)
     end
 
     availableMoney = availableMoney + tonumber(input)
+    availableMoney = Round(availableMoney, 4)
     self.UI.setAttribute("setMoney", "text", "")
     CheckMoney(player)
   end
@@ -102,7 +103,7 @@ function CheckPlayer(playerColor)
     return true
   end
   if(playerColor ~= "Black") then
-    broadcastToAll("Эта дощечка не вашего цвета!")
+    broadcastToAll("Этот кошель не вашего цвета!")
   end
   return false
 end
@@ -130,6 +131,11 @@ function CheckColor(color)
 end
 function Round(num, idp)
   return tonumber(string.format("%." .. (idp or 0) .. "f", num))
+end
+
+function ResetMoney(player)
+  availableMoney = 0
+  CheckMoney(player)
 end
 
 function GetAvailableMoney()

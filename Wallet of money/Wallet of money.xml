@@ -1,12 +1,15 @@
-<Panel position='0 85 -21' height='50' width='200' rotation='180 180 0' visibility=''>
+<Panel position='0 85 -21' height='40' width='205' rotation='180 180 0' visibility=''>
 	<TableLayout cellSpacing='0'>
 		<Row>
-			<Cell columnSpan='3'>
+			<Cell columnSpan='2'>
 				<InputField id='setMoney' value='0' placeholder='?' resizeTextForBestFit='True' resizeTextMaxSize='60'
 					onEndEdit='SetInputMoney' characterValidation='Decimal'/>
 			</Cell>
 			<Cell columnSpan='1'>
 				<Button text='?' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='CheckMoney'/>
+			</Cell>
+			<Cell columnSpan='1'>
+				<Button text='R' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='ResetMoney' visibility='Black'/>
 			</Cell>
 		</Row>
 	</TableLayout>
