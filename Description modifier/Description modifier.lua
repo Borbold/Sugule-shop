@@ -23,6 +23,9 @@ function onCollisionEnter(info)
         prev_flag = true
       end
     end
+    if(not prev_flag) then
+      broadcastToAll("Для " .. info.getName() .. " не указана цена/cost!")
+    end
   end
 end
 

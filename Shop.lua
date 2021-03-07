@@ -213,6 +213,8 @@ end
   -- Не отнимаемое значение.
   --Нужно чтобы грамотно отлавливать новые магазины после удаления какого либо из середины списка
   previousStoreId = 1
+  -- Нужем для переименовывания мешочков, но только в момент их непосредственного создания
+  detachedBags = {}
 end
 
 function onLoad(savedData)
@@ -220,7 +222,7 @@ function onLoad(savedData)
   if(savedData ~= "") then
     local loadedData = JSON.decode(savedData)
     allStoresGUID = loadedData.allStoresGUID or allStoresGUID
-    previousStoreId = loadedData.previousStoreId or previousStoreId
+    previousStoreId = loadedData.previousStoreId or 1
     if(loadedData.replacementXml and #loadedData.replacementXml > 0) then
       self.UI.setXml(loadedData.replacementXml)
     end
@@ -343,6 +345,7 @@ function PutObjectsInBag()
     table.insert(locBoardObjectsRot, locObj.getRotation())
     Wait.time(|| table.insert(locObjGUID, locObj.getGUID()), 0.2)
   end
+  detachedBags[previousStoreId] = spawnBag
   Wait.time(function() allStoresGUID[tostring(previousStoreId)] = spawnBag.getGUID() end, 0.3)
   Wait.time(|| SetObjMeta(spawnBag, locObjGUID, locBoardObjectsPos, locBoardObjectsRot), 0.4)
   Wait.time(|| XMLReplacementAdd(), 0.5)
@@ -432,7 +435,8 @@ function HidecaseMerchandise()
 end
 
 function UpdateXMLSave(_, input, id)
-  id = tostring(id)
+  if(input == "") then return end
+
   local currentXml = self.UI.getXml()
   if(currentXml:find("storename" .. id)) then
     local firstIndex = currentXml:find("storename" .. id) - 1
@@ -442,6 +446,8 @@ function UpdateXMLSave(_, input, id)
     locXml = locXml .. currentXml:sub(lastIndex)
     self.UI.setXml(locXml)
 	  Wait.time(|| UpdateSave(), 0.2)
+    id = tonumber(id)
+    if(detachedBags[id]) then detachedBags[id].setName(input) end
   end
 end
 
