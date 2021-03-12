@@ -131,11 +131,9 @@ function SelectItem(obj, playerColor, altClick)
 end
 function SpawnNewItemObject()
   local selfPosition = CoinPouch.getPosition()
-  local selfRotation = CoinPouch.getRotation()
   local spawnParametrs = {
     json = self.getJSON(),
-    position = {x = selfPosition.x - 5, y = selfPosition.y + countItem + 2, z = selfPosition.z},
-    rotation = selfRotation,
+    position = {x = selfPosition.x - 2.5, y = selfPosition.y + countItem + 2, z = selfPosition.z},
     scale = {x = 1, y = 1, z = 1},
     sound = false,
     snap_to_grid = true,
