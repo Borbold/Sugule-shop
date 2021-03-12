@@ -121,7 +121,7 @@ function SelectItem(obj, playerColor, altClick)
       broadcastToColor("Вы приобрели товар", playerColor)
       broadcastToColor("У вас осталось: " .. CoinPouch.call("GetAvailableMoney"), playerColor)
 
-      SpawnItemObject()
+      SpawnNewItemObject()
     else
       broadcastToColor("Вам не хватает средств", playerColor)
     end
@@ -129,7 +129,7 @@ function SelectItem(obj, playerColor, altClick)
     print("А чем расплачиваться собрались?")
   end
 end
-function SpawnItemObject()
+function SpawnNewItemObject()
   local selfPosition = CoinPouch.getPosition()
   local selfRotation = CoinPouch.getRotation()
   local spawnParametrs = {
@@ -214,7 +214,23 @@ end
               text = "+",
               resizeTextForBestFit = "True",
               resizeTextMaxSize = "60",
-              onClick = "TestAddNewList"
+              onClick = "TestAddNewList",
+              visibility = "Black"
+            }
+          },
+          {
+            tag = "Button",
+            attributes = {
+              id = "percent_",
+              text = "100%",
+              resizeTextForBestFit = "True",
+              resizeTextMaxSize = "60",
+              onClick = "PercentageSubjects",
+              tooltip = "Процентное отношение количества предметов, которое будет выложено в случайном порядке",
+              tooltipFontSize = "35",
+              tooltipWidth = "400",
+              tooltipOffset = "90",
+              visibility = "Black"
             }
           },
         },
@@ -233,6 +249,7 @@ end
   previousStoreId = 1
   -- Нужем для переименовывания мешочков, но только в момент их непосредственного создания
   detachedBags = {}
+  percentageStoreItem = {}
 end
 
 function onLoad(savedData)
@@ -260,8 +277,18 @@ function WasteRemoval()
   UpdateSave()
 end
 -- Хз как реализовать
-function TestAddNewList(_, _, idStoreGUID)
+function TestAddNewList(_, _, _)
   print("Пока в разработке")
+end
+
+function PercentageSubjects(_, _, idStoreGUID)
+  local percent_t = self.UI.getAttribute(idStoreGUID, "text")
+  local percent = tonumber(percent_t:sub(1, #percent_t - 1))
+  percent = ((percent - 25) > 0 and (percent - 25)) or 100
+  self.UI.setAttribute(idStoreGUID, "text", percent.."%")
+
+  local idStoreGUID = idStoreGUID:sub(9)
+  percentageStoreItem[allStoresGUID[idStoreGUID]] = percent
 end
 
 function onCollisionEnter(info)
@@ -401,12 +428,19 @@ function ShowcaseMerchandise(player, _, idStoreGUID)
 end
 function GetObjectsBag(storeGUID, store)
   local allObjMeta = store.call("GetObjectMetaBag")
+  -- Нет ли разложенных вещей
   if(not next(allObjectsItemGUID)) then
-    for _,v in ipairs(allObjMeta) do
-      if(v[4] == storeGUID) then
-        local objGUID = v[1]
+    local currentCountItem = 0
+    for idItem, meta in ipairs(allObjMeta) do
+      local percentItemShow, countItem = 100, #allObjMeta
+      if(percentageStoreItem[storeGUID]) then
+        percentItemShow = percentageStoreItem[storeGUID]
+      end
+      if((math.random(1, 100) <= percentItemShow and currentCountItem < (countItem*percentItemShow)/100) or
+          countItem - idItem + currentCountItem < (countItem*percentItemShow)/100) then
+        local objGUID = meta[1]
 
-        local locText, count = v[2], 1
+        local locText, count = meta[2], 1
         local objPos = {}
         for digital in locText:gmatch("%S+") do
           table.insert(objPos, digital + self.getPosition()[count])
@@ -414,7 +448,7 @@ function GetObjectsBag(storeGUID, store)
         end
         objPos[2] = self.getPosition().y + 0.5
       
-        locText, count = v[3], 1
+        locText, count = meta[3], 1
         local objRot = {}
         for digital in locText:gmatch("%S+") do
           table.insert(objRot, digital)
@@ -427,11 +461,13 @@ function GetObjectsBag(storeGUID, store)
           position = {x = objPos[1], y = objPos[2], z = objPos[3]},
           rotation = {x = objRot[1], y = objRot[2], z = 0}
         }
-        local storItem = store.takeObject(takeParametrs)
-        -- Пока хз, добавить это или нет
-        --storItem.locked = true
-        --print(storItem.locked)
+        store.takeObject(takeParametrs)
+        currentCountItem = currentCountItem + 1
       end
+      -- Пока хз, добавить это или нет
+      --local storItem = store.takeObject(takeParametrs)
+      --storItem.locked = true
+      --print(storItem.locked)
     end
   end
 end
@@ -522,6 +558,8 @@ function XMLReplacementAdd()
 
                         shopButton.children[1].children[1].attributes.id = previousStoreId
                         shopButton.children[1].children[3].attributes.id = previousStoreId
+                        shopButton.children[1].children[4].attributes.id =
+                          shopButton.children[1].children[4].attributes.id .. previousStoreId
                         table.insert(attribute, shopButton)
                         self.UI.setXmlTable(xmlTable)
                         desiredTable = false
