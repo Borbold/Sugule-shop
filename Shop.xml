@@ -5,7 +5,10 @@
 	<TableLayout cellSpacing='1'>
 		<Row>
 			<Cell>
-				<Button text='Создать магазин' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='CreateBag'/>
+				<Button text='Создать магазин' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='CreateBag'
+				tooltip='Kак только выложили предметы в нужном порядке, нажмите, после чего появится мешочек.
+				Eсли хотите удалить магазин, удалите сам мешочек, при этом вещи из него можно заранее выложить'
+				tooltipFontSize='35' tooltipPosition='Above' tooltipWidth='400' tooltipOffset='50'/>
 			</Cell>
 		</Row>
 	</TableLayout>
@@ -32,5 +35,7 @@
 
 <Panel position='0 850 -65' active='true' visibility='Black'>
 	<InputField id='discountField' resizeTextForBestFit='true' resizeTextMaxSize='60' height='60'
-		onEndEdit='GiveDiscount' characterValidation='Integer' placeholder='discount'/>
+		onEndEdit='GiveDiscount' characterValidation='Integer' placeholder='discount'
+		tooltip='Устанавливайте скидку в момент, когда разложили магазин. Oна ни как не отображается, но при покупке товара будет учитываться'
+		tooltipFontSize='35' tooltipPosition='Above' tooltipWidth='400' tooltipOffset='50'/>
 </Panel>

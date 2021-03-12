@@ -1,15 +1,19 @@
-<Panel position='0 85 -21' height='40' width='205' rotation='180 180 0' visibility=''>
+<Panel position='0 -85 -21' height='40' width='205' visibility=''>
 	<TableLayout cellSpacing='0'>
 		<Row>
 			<Cell columnSpan='2'>
-				<InputField id='setMoney' value='0' placeholder='?' resizeTextForBestFit='True' resizeTextMaxSize='60'
+				<InputField id='setMoney' value='0' placeholder='money' resizeTextForBestFit='True' resizeTextMaxSize='60'
 					onEndEdit='SetInputMoney' characterValidation='Decimal'/>
 			</Cell>
-			<Cell columnSpan='1'>
-				<Button text='?' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='CheckMoney'/>
+			<Cell columnSpan='1' dontUseTableCellBackground='true'>
+				<Button text='?' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='CheckMoney' color='#00000000'
+				tooltip='Посмотреть сколько осталось'
+				tooltipFontSize='35' tooltipWidth='400' tooltipPosition='Below'/>
 			</Cell>
-			<Cell columnSpan='1'>
-				<Button text='R' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='ResetMoney' visibility='Black'/>
+			<Cell columnSpan='1' dontUseTableCellBackground='true'>
+				<Button text='R' resizeTextForBestFit='True' resizeTextMaxSize='60' onClick='ResetMoney' visibility='Black' color='#00000000'
+				tooltip='Oбнуление денег'
+				tooltipFontSize='35' tooltipWidth='400' tooltipPosition='Below'/>
 			</Cell>
 		</Row>
 	</TableLayout>

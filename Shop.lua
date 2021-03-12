@@ -45,9 +45,22 @@ end
 function CreateButton()
   self.createButton({
     click_function = "SelectItem", function_owner = self,
-    position = {0, 0.1, 0}, height = 500, width = 500,
-    color = {0.75, 0.25, 0.25, 0.6},
+    position = {0.75, 0.15, 0.75}, height = 250, width = 250,
+    color = {1, 0.9, 0.9, 1}, tooltip = "Купить"
   })
+  self.createButton({
+    click_function = "ClearLuaScript", function_owner = self,
+    position = {-0.75, 0.15, -0.75}, height = 250, width = 250,
+    color = {1, 0, 0, 0.5}, tooltip = "Удалить скрипт из данного объекта"
+  })
+end
+function ClearLuaScript(obj, color, altClick)
+  if(color == "Black") then
+    Wait.time(function()
+      self.setLuaScript("")
+      broadcastToColor("Скрипт удален. Положите объект в мешок и вытащите, дабы изменения вступили в силу", "Black")
+    end, 1)
+  end
 end
 
 function onLoad()
@@ -152,7 +165,12 @@ end
               text = "storename",
               resizeTextForBestFit = "True",
               resizeTextMaxSize = "60",
-              onEndEdit = "UpdateXMLSave"
+              onEndEdit = "UpdateXMLSave",
+              tooltip = "Название магазина сохраняется только при первом вводе. Учитывайте это!",
+              tooltipFontSize = "35",
+              tooltipPosition = "Above",
+              tooltipWidth = "400",
+              tooltipOffset = "90"
             }
           }
         },
