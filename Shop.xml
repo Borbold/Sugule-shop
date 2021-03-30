@@ -35,7 +35,7 @@
 
 <Panel position='0 850 -65' active='true' visibility='Black'>
 	<InputField id='discountField' resizeTextForBestFit='true' resizeTextMaxSize='60' height='60'
-		onEndEdit='GiveDiscount' characterValidation='Integer' placeholder='discount'
+		onEndEdit='GiveDiscount' characterValidation='Decimal' placeholder='discount'
 		tooltip='Устанавливайте скидку в момент, когда разложили магазин. Oна ни как не отображается, но при покупке товара будет учитываться'
 		tooltipFontSize='35' tooltipPosition='Above' tooltipWidth='400' tooltipOffset='50'/>
 </Panel>
